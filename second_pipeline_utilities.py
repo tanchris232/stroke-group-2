@@ -1,17 +1,34 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer, make_column_selector
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+
+# Custom transformer to apply LabelEncoder across multiple columns
+class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        self.encoders = {}
+        for c in X.columns:
+            le = LabelEncoder()
+            le.fit(X[c].astype(str))
+            self.encoders[c] = le
+        return self
+    
+    def transform(self, X, y=None):
+        X = X.copy()
+        for c in X.columns:
+            le = self.encoders[c]
+            X[c] = le.transform(X[c].astype(str))
+        return X
 
 def preprocess_stroke_data(stroke_df):
     """
-    Preprocesses stroke data by handling missing values, encoding categorical variables,
-    and splitting into features and target.
+    Preprocesses stroke data by handling missing values and splitting into features and target.
     """
     # Handle missing 'bmi' values represented as 'N/A' or NaN
     stroke_df['bmi'].replace('N/A', np.nan, inplace=True)
@@ -31,24 +48,22 @@ def stroke_model_generator(stroke_df):
     """
     X_train, X_test, y_train, y_test = preprocess_stroke_data(stroke_df)
     
-    # Define the preprocessor
+    # Define the preprocessor for numerical features
+    numerical_features = X_train.select_dtypes(include=np.number).columns.tolist()
+    categorical_features = X_train.select_dtypes(exclude=np.number).columns.tolist()
+
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), make_column_selector(dtype_include=np.number)),
-            ('cat', OneHotEncoder(), make_column_selector(dtype_include=object))],
-        remainder='passthrough')  
-    # Include this to avoid dropping columns not specified
+            ('num', StandardScaler(), numerical_features),
+            ('cat', MultiColumnLabelEncoder(), categorical_features)],
+        remainder='passthrough')
     
-    # Apply scaling to all features after preprocessing
-    all_features_scaler = Pipeline(steps=[('preprocessor', preprocessor),
-                                          ('scaler', StandardScaler(with_mean=False))])
-
     # Define pipelines with the correct preprocessor and model
     pipeline_rf = Pipeline([
-        ('all_features_scaler', all_features_scaler),
+        ('preprocessor', preprocessor),
         ('classifier', RandomForestClassifier(random_state=42))])
     pipeline_lr = Pipeline([
-        ('all_features_scaler', all_features_scaler),
+        ('preprocessor', preprocessor),
         ('classifier', LogisticRegression(random_state=42, max_iter=1000))])
     
     # Train the models
@@ -64,9 +79,10 @@ def stroke_model_generator(stroke_df):
     roc_auc_rf = roc_auc_score(y_test, y_pred_rf)
     accuracy_lr = accuracy_score(y_test, y_pred_lr)
     roc_auc_lr = roc_auc_score(y_test, y_pred_lr)
+
     
-    print(f"Random Forest - Accuracy: {accuracy_rf}, ROC AUC: {roc_auc_rf}")
-    print(f"Logistic Regression - Accuracy: {accuracy_lr}, ROC AUC: {roc_auc_lr}")
+    print(f"Random Forest - Accuracy: {accuracy_rf}")
+    print(f"Logistic Regression - Accuracy: {accuracy_lr}")
     
     return pipeline_rf, pipeline_lr
 
