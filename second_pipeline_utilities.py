@@ -77,5 +77,5 @@ def stroke_model_generator(stroke_df):
     return pipeline_rf, pipeline_lr
 
 if __name__ == "__main__":
-    stroke_df = pd.read_csv('path_to_your_stroke_data.csv')
+    stroke_df = pd.read_csv('healthcare-dataset-stroke-data.csv')
     stroke_model_generator(stroke_df)
