@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# Custom transformer to apply LabelEncoder across multiple columns
+# This is a custom transformer to use LabelEncoder for all the columns that have string, i.e. the categorical columns.
 class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         self.encoders = {}
@@ -28,9 +28,10 @@ class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
 
 def preprocess_stroke_data(stroke_df):
     """
-    Preprocesses stroke data by handling missing values and splitting into features and target.
+    This function was written to preprocess the stroke data by handling missing values found in the
+    BMI column and then splitting into features and target.
     """
-    # Handle missing 'bmi' values represented as 'N/A' or NaN
+    # Handle missing 'bmi' values that show up as 'N/A'
     stroke_df['bmi'].replace('N/A', np.nan, inplace=True)
     stroke_df['bmi'] = pd.to_numeric(stroke_df['bmi'], errors='coerce')
     stroke_df.dropna(subset=['bmi'], inplace=True)
@@ -44,7 +45,8 @@ def preprocess_stroke_data(stroke_df):
 
 def stroke_model_generator(stroke_df):
     """
-    Preprocesses the stroke data, trains classification models, and evaluates them.
+    This function continues with the rreprocessing of the stroke data, additionally training the
+    classification models and evaluates them.
     """
     X_train, X_test, y_train, y_test = preprocess_stroke_data(stroke_df)
     
@@ -77,8 +79,7 @@ def stroke_model_generator(stroke_df):
     # Evaluate the models
     accuracy_rf = accuracy_score(y_test, y_pred_rf)
     roc_auc_rf = roc_auc_score(y_test, y_pred_rf)
-    accuracy_lr = accuracy_score(y_test, y_pred_lr)
-    roc_auc_lr = roc_auc_score(y_test, y_pred_lr)
+ 
 
     
     print(f"Random Forest - Accuracy: {accuracy_rf}")
