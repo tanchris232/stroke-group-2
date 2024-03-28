@@ -5,26 +5,21 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 
-# Load your dataset
-# df = pd.read_csv('path_to_your_data.csv')
+# Load the dataset
+file_path = '/path/to/your/healthcare-dataset-stroke-data.csv'
+df = pd.read_csv(file_path)
 
-# Example DataFrame
-data = {
-    'age': [25, 45, 35, np.nan, 60],
-    'hypertension': [0, 1, 0, 0, 1],
-    'heart_disease': [0, 0, 0, 1, 1],
-    'avg_glucose_level': [80, 200, 150, 140, 180],
-    'bmi': [22, np.nan, 28, 27, 30],
-    'gender': ['Male', 'Female', 'Female', 'Male', 'Female'],
-    'smoking_status': ['never smoked', 'smokes', 'formerly smoked', np.nan, 'never smoked'],
-    'stroke': [0, 1, 1, 0, 1]
-}
+# Drop the 'id' column as it's not useful for prediction
+df.drop('id', axis=1, inplace=True)
 
-df = pd.DataFrame(data)
+# Handle missing values in 'bmi' column
+# Assuming missing values are already represented as NaN, otherwise you might need to replace other representations with np.nan
+df['bmi'].replace('N/A', np.nan, inplace=True)  # Example if 'N/A' were used for missing values
+df['bmi'] = pd.to_numeric(df['bmi'], errors='coerce')  # Ensure 'bmi' is numeric and coerce any errors into NaN
+df.dropna(subset=['bmi'], inplace=True)  # Drop rows with NaN in 'bmi'
 
 # Define features and target
 X = df.drop('stroke', axis=1)
@@ -36,13 +31,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Define preprocessing for numerical columns (scale them)
 numerical_features = ['age', 'avg_glucose_level', 'bmi']
 numerical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),
+    ('imputer', SimpleImputer(strategy='mean')),  # Imputing just in case
     ('scaler', StandardScaler())])
 
 # Define preprocessing for categorical columns (encode them)
-categorical_features = ['gender', 'hypertension', 'heart_disease', 'smoking_status']
+categorical_features = ['gender', 'hypertension', 'heart_disease', 'ever_married', 'work_type', 'Residence_type', 'smoking_status']
 categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Imputing just in case
     ('onehot', OneHotEncoder(handle_unknown='ignore'))])
 
 # Combine preprocessing steps
