@@ -1,66 +1,81 @@
-import numpy as np
-import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_auc_score
+import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
+from sklearn.linear_model import LogisticRegression
+import numpy as np
 
-# Load the dataset
-file_path = '/path/to/your/healthcare-dataset-stroke-data.csv'
-df = pd.read_csv(file_path)
+def preprocess_stroke_data(stroke_df):
+    """
+    Preprocesses stroke data by handling missing values, encoding categorical variables,
+    and splitting into features and target.
+    """
+    # Handle missing 'bmi' values represented as 'N/A' or NaN
+    stroke_df['bmi'].replace('N/A', np.nan, inplace=True)
+    stroke_df['bmi'] = pd.to_numeric(stroke_df['bmi'], errors='coerce')
+    stroke_df.dropna(subset=['bmi'], inplace=True)
+    
+    # Define features and target
+    X = stroke_df.drop(columns=['id', 'stroke'])
+    y = stroke_df['stroke'].values
+    
+    # Define numerical and categorical features
+    numerical_features = ['age', 'avg_glucose_level', 'bmi']
+    categorical_features = ['gender', 'hypertension', 'heart_disease', 'ever_married', 
+                            'work_type', 'Residence_type', 'smoking_status']
+    
+    # Create transformers for numerical and categorical features
+    numerical_transformer = Pipeline(steps=[
+        ('scaler', StandardScaler())])
+    categorical_transformer = Pipeline(steps=[
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))])
+    
+    # Combine preprocessing for numerical and categorical features
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, numerical_features),
+            ('cat', categorical_transformer, categorical_features)])
+    
+    # Split the dataset into training and testing sets
+    return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Drop the 'id' column as it's not useful for prediction
-df.drop('id', axis=1, inplace=True)
+def stroke_model_generator(stroke_df):
+    """
+    Preprocesses the stroke data, trains classification models, and evaluates them.
+    """
+    X_train, X_test, y_train, y_test = preprocess_stroke_data(stroke_df)
+    
+    # Define a pipeline with preprocessing and a classifier
+    steps_rf = [('preprocessor', preprocessor),
+                ('classifier', RandomForestClassifier(random_state=42))]
+    steps_lr = [('preprocessor', preprocessor),
+                ('classifier', LogisticRegression(random_state=42, max_iter=1000))]
+    
+    pipeline_rf = Pipeline(steps_rf)
+    pipeline_lr = Pipeline(steps_lr)
+    
+    # Train the models
+    pipeline_rf.fit(X_train, y_train)
+    pipeline_lr.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred_rf = pipeline_rf.predict(X_test)
+    y_pred_lr = pipeline_lr.predict(X_test)
+    
+    # Evaluate the models
+    accuracy_rf = accuracy_score(y_test, y_pred_rf)
+    roc_auc_rf = roc_auc_score(y_test, y_pred_rf)
+    accuracy_lr = accuracy_score(y_test, y_pred_lr)
+    roc_auc_lr = roc_auc_score(y_test, y_pred_lr)
+    
+    print(f"Random Forest - Accuracy: {accuracy_rf}, ROC AUC: {roc_auc_rf}")
+    print(f"Logistic Regression - Accuracy: {accuracy_lr}, ROC AUC: {roc_auc_lr}")
+    
+    return pipeline_rf, pipeline_lr
 
-# Handle missing values in 'bmi' column
-# Assuming missing values are already represented as NaN, otherwise you might need to replace other representations with np.nan
-df['bmi'].replace('N/A', np.nan, inplace=True)  # Example if 'N/A' were used for missing values
-df['bmi'] = pd.to_numeric(df['bmi'], errors='coerce')  # Ensure 'bmi' is numeric and coerce any errors into NaN
-df.dropna(subset=['bmi'], inplace=True)  # Drop rows with NaN in 'bmi'
-
-# Define features and target
-X = df.drop('stroke', axis=1)
-y = df['stroke']
-
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Define preprocessing for numerical columns (scale them)
-numerical_features = ['age', 'avg_glucose_level', 'bmi']
-numerical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),  # Imputing just in case
-    ('scaler', StandardScaler())])
-
-# Define preprocessing for categorical columns (encode them)
-categorical_features = ['gender', 'hypertension', 'heart_disease', 'ever_married', 'work_type', 'Residence_type', 'smoking_status']
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Imputing just in case
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))])
-
-# Combine preprocessing steps
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numerical_transformer, numerical_features),
-        ('cat', categorical_transformer, categorical_features)])
-
-# Define the model
-model = Pipeline(steps=[('preprocessor', preprocessor),
-                        ('classifier', RandomForestClassifier(random_state=42))])
-
-# Train the model
-model.fit(X_train, y_train)
-
-# Predict on the testing set
-y_pred = model.predict(X_test)
-
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-print(f'Accuracy: {accuracy}')
-print(f'ROC AUC: {roc_auc}')
-print(f'Confusion Matrix:\n{conf_matrix}')
+if __name__ == "__main__":
+    stroke_df = pd.read_csv('path_to_your_stroke_data.csv')
+    stroke_model_generator(stroke_df)
