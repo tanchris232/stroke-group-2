@@ -6,7 +6,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-import numpy as np
+import numpy as np  
+
 
 def preprocess_stroke_data(stroke_df):
     """
