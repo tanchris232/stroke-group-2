@@ -2,12 +2,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
+from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-import numpy as np  
-
+import numpy as np
 
 def preprocess_stroke_data(stroke_df):
     """
@@ -23,23 +22,6 @@ def preprocess_stroke_data(stroke_df):
     X = stroke_df.drop(columns=['id', 'stroke'])
     y = stroke_df['stroke'].values
     
-    # Define numerical and categorical features
-    numerical_features = ['age', 'avg_glucose_level', 'bmi']
-    categorical_features = ['gender', 'hypertension', 'heart_disease', 'ever_married', 
-                            'work_type', 'Residence_type', 'smoking_status']
-    
-    # Create transformers for numerical and categorical features
-    numerical_transformer = Pipeline(steps=[
-        ('scaler', StandardScaler())])
-    categorical_transformer = Pipeline(steps=[
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))])
-    
-    # Combine preprocessing for numerical and categorical features
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numerical_transformer, numerical_features),
-            ('cat', categorical_transformer, categorical_features)])
-    
     # Split the dataset into training and testing sets
     return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
@@ -49,14 +31,25 @@ def stroke_model_generator(stroke_df):
     """
     X_train, X_test, y_train, y_test = preprocess_stroke_data(stroke_df)
     
-    # Define a pipeline with preprocessing and a classifier
-    steps_rf = [('preprocessor', preprocessor),
-                ('classifier', RandomForestClassifier(random_state=42))]
-    steps_lr = [('preprocessor', preprocessor),
-                ('classifier', LogisticRegression(random_state=42, max_iter=1000))]
+    # Define the preprocessor
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), make_column_selector(dtype_include=np.number)),
+            ('cat', OneHotEncoder(), make_column_selector(dtype_include=object))],
+        remainder='passthrough')  
+    # Include this to avoid dropping columns not specified
     
-    pipeline_rf = Pipeline(steps_rf)
-    pipeline_lr = Pipeline(steps_lr)
+    # Apply scaling to all features after preprocessing
+    all_features_scaler = Pipeline(steps=[('preprocessor', preprocessor),
+                                          ('scaler', StandardScaler(with_mean=False))])
+
+    # Define pipelines with the correct preprocessor and model
+    pipeline_rf = Pipeline([
+        ('all_features_scaler', all_features_scaler),
+        ('classifier', RandomForestClassifier(random_state=42))])
+    pipeline_lr = Pipeline([
+        ('all_features_scaler', all_features_scaler),
+        ('classifier', LogisticRegression(random_state=42, max_iter=1000))])
     
     # Train the models
     pipeline_rf.fit(X_train, y_train)
@@ -76,6 +69,7 @@ def stroke_model_generator(stroke_df):
     print(f"Logistic Regression - Accuracy: {accuracy_lr}, ROC AUC: {roc_auc_lr}")
     
     return pipeline_rf, pipeline_lr
+
 
 if __name__ == "__main__":
     stroke_df = pd.read_csv('healthcare-dataset-stroke-data.csv')
