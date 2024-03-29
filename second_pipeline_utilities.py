@@ -33,7 +33,8 @@ def stroke_model_generator(stroke_df):
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), numerical_features)],
+            ('num', StandardScaler(), numerical_features),
+            ('cat', MultiColumnLabelEncoder(), categorical_features)],
         remainder='passthrough')
     
     # Define pipelines with the correct preprocessor and model
