@@ -29,6 +29,7 @@ def stroke_model_generator(stroke_df):
     
     # Define the preprocessor for numerical features
     numerical_features = X_train.select_dtypes(include=np.number).columns.tolist()
+    categorical_features = X_train.select_dtypes(exclude=np.number).columns.tolist()
 
     preprocessor = ColumnTransformer(
         transformers=[
