@@ -9,6 +9,23 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
+# This is a custom transformer to use LabelEncoder for all the columns that have string, i.e. the categorical columns.
+class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        self.encoders = {}
+        for c in X.columns:
+            le = LabelEncoder()
+            le.fit(X[c].astype(str))
+            self.encoders[c] = le
+        return self
+    
+    def transform(self, X, y=None):
+        X = X.copy()
+        for c in X.columns:
+            le = self.encoders[c]
+            X[c] = le.transform(X[c].astype(str))
+        return X
+
 def preprocess_stroke_data(stroke_df):
     """
     This function was written to preprocess the stroke data by handling missing values found in the
