@@ -1,7 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.pipeline import Pipeline
@@ -25,7 +24,7 @@ def stroke_model_generator(stroke_df):
     This function continues with the rreprocessing of the stroke data, additionally training the
     classification models and evaluates them.
     """
-    X_train, X_test, y_train, y_test = preprocess_stroke_data(stroke_df)
+    X_train, X_test, y_train, y_test = preprocess_stroke_data(X_train, X_test, y_train, y_test)
     
     # Define the preprocessor for numerical features
     numerical_features = X_train.select_dtypes(include=np.number).columns.tolist()
