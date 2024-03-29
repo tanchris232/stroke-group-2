@@ -27,14 +27,6 @@ class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
         return X
 
 def preprocess_stroke_data(stroke_df):
-    """
-    This function was written to preprocess the stroke data by handling missing values found in the
-    BMI column and then splitting into features and target.
-    """
-    # Handle missing 'bmi' values that show up as 'N/A'
-    stroke_df['bmi'].replace('N/A', np.nan, inplace=True)
-    stroke_df['bmi'] = pd.to_numeric(stroke_df['bmi'], errors='coerce')
-    stroke_df.dropna(subset=['bmi'], inplace=True)
     
     # Define features and target
     X = stroke_df.drop(columns=['id', 'stroke'])
