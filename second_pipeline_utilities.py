@@ -9,22 +9,6 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# This is a custom transformer to use LabelEncoder for all the columns that have string, i.e. the categorical columns.
-class MultiColumnLabelEncoder(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        self.encoders = {}
-        for c in X.columns:
-            le = LabelEncoder()
-            le.fit(X[c].astype(str))
-            self.encoders[c] = le
-        return self
-    
-    def transform(self, X, y=None):
-        X = X.copy()
-        for c in X.columns:
-            le = self.encoders[c]
-            X[c] = le.transform(X[c].astype(str))
-        return X
 
 def preprocess_stroke_data(stroke_df):
     
@@ -35,17 +19,7 @@ def preprocess_stroke_data(stroke_df):
     # Split the dataset into training and testing sets
     return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-data = {
-    'X_train': X_train,
-    'X_test': X_test,
-    'y_train': y_train,
-    'y_test': y_test
-}
-def stroke_model_generator(data):
-    X_train = data['X_train']
-    X_test = data['X_test']
-    y_train = data['y_train']
-    y_test = data['y_test']
+def stroke_model_generator(stroke_df):
     """
     This function continues with the rreprocessing of the stroke data, additionally training the
     classification models and evaluates them.
@@ -82,13 +56,10 @@ def stroke_model_generator(data):
     accuracy_rf = accuracy_score(y_test, y_pred_rf)
     roc_auc_rf = roc_auc_score(y_test, y_pred_rf)
  
-
-    
     print(f"Random Forest - Accuracy: {accuracy_rf}")
     print(f"Logistic Regression - Accuracy: {accuracy_lr}")
     
     return pipeline_rf, pipeline_lr
-
 
 if __name__ == "__main__":
     stroke_df = pd.read_csv('healthcare-dataset-stroke-data.csv')
