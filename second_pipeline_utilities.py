@@ -35,7 +35,7 @@ def preprocess_stroke_data(stroke_df):
     # Split the dataset into training and testing sets
     return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-def stroke_model_generator(stroke_df):
+def stroke_model_generator(X_train, X_test, y_train, y_test):
     """
     This function continues with the rreprocessing of the stroke data, additionally training the
     classification models and evaluates them.
