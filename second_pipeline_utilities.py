@@ -1,6 +1,7 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.pipeline import Pipeline
@@ -28,12 +29,10 @@ def stroke_model_generator(stroke_df):
     
     # Define the preprocessor for numerical features
     numerical_features = X_train.select_dtypes(include=np.number).columns.tolist()
-    categorical_features = X_train.select_dtypes(exclude=np.number).columns.tolist()
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), numerical_features),
-            ('cat', MultiColumnLabelEncoder(), categorical_features)],
+            ('num', StandardScaler(), numerical_features)],
         remainder='passthrough')
     
     # Define pipelines with the correct preprocessor and model
