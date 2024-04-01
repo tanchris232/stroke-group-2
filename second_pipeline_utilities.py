@@ -24,7 +24,10 @@ def stroke_model_generator(stroke_df):
     This function continues with the rreprocessing of the stroke data, additionally training the
     classification models and evaluates them.
     """
-    X_train, X_test, y_train, y_test = preprocess_stroke_data(X_test)
+    X = stroke_df.drop(columns=['id', 'stroke'])
+    y = stroke_df['stroke'].values
+
+    X_train, X_test, y_train, y_test = preprocess_stroke_data(X, y)
     
     # Define the preprocessor for numerical features
     numerical_features = X_train.select_dtypes(include=np.number).columns.tolist()
