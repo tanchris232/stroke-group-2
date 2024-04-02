@@ -55,9 +55,9 @@ def preprocess_data(stroke_df):
     
     return X, y, preprocessor
 
-def train_and_evaluate_model(data_file):
+def train_and_evaluate_model(stroke_df):
     # Load and preprocess the dataset
-    stroke_df = pd.read_csv(data_file)
+    stroke_df = pd.read_csv(stroke_df)
     X, y, preprocessor = preprocess_data(stroke_df)
 
     # Split the dataset
